@@ -1,0 +1,90 @@
+version: '2'
+
+networks:
+  ez-nw:
+
+volumes:
+  yb-master-data-1:
+  yb-tserver-data-1:
+  yb-tserver-data-2:
+  drupal-data:
+  db-data-kong-postgres:
+
+services:
+
+  # mariadb:
+  #   image: mariadb:10.3
+  #   container_name: drupaldb
+  #   environment:
+  #     - MARIADB_ROOT_PASSWORD=drupal
+  #     - MARIADB_PASSWORD=mariadb
+  #     - MARIADB_USER=mariadb
+  #   volumes:
+  #   - drupal-data:/var/lib/mysql
+  #   networks:
+  #     - ez-nw
+  yb-master:
+      image: yugabytedb/yugabyte:2.17.1.0-b439
+      container_name: yb-master-n1
+      volumes:
+      - yb-master-data-1:/mnt/master
+      command: [ "/home/yugabyte/bin/yb-master",
+                "--fs_data_dirs=/mnt/master",
+                "--master_addresses=yb-master-n1:7100",
+                "--rpc_bind_addresses=yb-master-n1:7100",
+                "--replication_factor=1"]
+      ports:
+      - "7001:7000"
+      environment:
+        SERVICE_7000_NAME: yb-master
+      networks:
+      - ez-nw
+
+  yb-tserver:
+      image: yugabytedb/yugabyte:2.17.1.0-b439
+      container_name: yb-tserver-n1
+      volumes:
+      - yb-tserver-data-1:/mnt/tserver
+      command: [ "/home/yugabyte/bin/yb-tserver",
+                "--fs_data_dirs=/mnt/tserver",
+                "--enable_ysql",
+                "--rpc_bind_addresses=yb-tserver-n1:9100",
+                "--tserver_master_addrs=yb-master-n1:7100"]
+      environment:
+        SERVICE_5433_NAME: ysql
+        SERVICE_9042_NAME: ycql
+        SERVICE_6379_NAME: yedis
+        SERVICE_9000_NAME: yb-tserver
+      networks:
+      - ez-nw
+      depends_on:
+      - yb-master
+  yb-tserver-1:
+      image: yugabytedb/yugabyte:2.17.1.0-b439
+      container_name: yb-tserver-n2
+      volumes:
+      - yb-tserver-data-2:/mnt/tserver
+      command: [ "/home/yugabyte/bin/yb-tserver",
+                "--fs_data_dirs=/mnt/tserver",
+                "--enable_ysql",
+                "--rpc_bind_addresses=yb-tserver-n2:9100",
+                "--tserver_master_addrs=yb-master-n1:7100"]
+      environment:
+        SERVICE_5433_NAME: ysql
+        SERVICE_9042_NAME: ycql
+        SERVICE_6379_NAME: yedis
+        SERVICE_9000_NAME: yb-tserver
+      networks:
+      - ez-nw
+      depends_on:
+      - yb-master
+
+  drupal:
+    build: ./
+    container_name: ezcontent_drupal
+    depends_on:
+      - yb-master
+    ports:
+      - 8062:8080
+    networks:
+      - ez-nw

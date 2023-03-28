@@ -1,0 +1,13 @@
+{
+    "patches": {
+      "drupal/paragraphs_edit": {
+          "Fatal error: Call to a member function getName()": "https://www.drupal.org/files/issues/2020-08-21/2944653-9.patch"
+      },
+      "drupal/entity_usage": {
+        "HTMLLink Plugin only works with PublicStreamWrapper": "https://www.drupal.org/files/issues/2019-09-19/entity_usage-htmllink-streamwrapper-2973297-7.patch"
+      },
+      "drupal/decoupled_router": {
+        "Fatal error when updating or deleting nodes with an alias": "https://www.drupal.org/files/issues/2020-08-20/decoupled_router-error_when_updating_or_deleting_nodes_with_alias-3166364_1.patch"
+      }
+    }
+  }
